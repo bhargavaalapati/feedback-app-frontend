@@ -5,6 +5,7 @@
 A simple, responsive frontend for collecting and viewing feedback. It includes a form with interactive buttons and live toasts, all styled with Bootstrap.
 
 -----
+### Here is the backend repo Link -> https://github.com/bhargavaalapati/feedback-app-backend
 
 ### 📚 Tech Stack
 
@@ -45,6 +46,4 @@ You can open `index.html` or `view.html` directly in your browser. However, the 
 3.  Go to **Netlify** or **GitHub Pages** and connect it to your `feedback-frontend` repo.
 4.  Netlify will automatically detect and deploy your static files, making your site live in minutes.
 
-### 📸 Screenshots
 
-*(Optional: Add screenshots of your feedback form and viewer pages here for a professional touch.)*
