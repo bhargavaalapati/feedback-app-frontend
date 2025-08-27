@@ -30,7 +30,7 @@
 <script>
 async function loadFeedback() {
   try {
-    const res = await fetch("https://feedback-app.onrender.com/feedback");
+    const res = await fetch("https://feedback-app-backend-q06f.onrender.com/feedback");
     const data = await res.json();
     const table = document.getElementById("feedbackTable");
 
@@ -55,3 +55,4 @@ loadFeedback();
 
 </body>
 </html>
+
