@@ -6,9 +6,14 @@
 <title>Submit Feedback</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-  body.dark-mode { background-color: #121212; color: #f5f5f5; }
+  body.bg-light { background-color: #f8f9fa; color: #212529; transition: background 0.3s, color 0.3s; }
+  body.dark-mode { background-color: #121212; color: #f5f5f5; transition: background 0.3s, color 0.3s; }
   body.dark-mode .card { background-color: #1e1e1e; color: #f5f5f5; }
+  body.bg-light .card { background-color: #fff; color: #212529; }
+
   .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 9999; }
+  .toast { opacity: 0.95; border-radius: 0.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+  .toast-body { font-size: 0.95rem; line-height: 1.3; }
 </style>
 </head>
 <body class="bg-light">
@@ -51,6 +56,7 @@
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const backendURL = "https://feedback-app-backend-q06f.onrender.com/feedback";
 const googleReviewURL = "https://www.google.com/maps/place/SRI+BHAVYA+HOSTEL+(+LADIES)/@17.7359304,83.3334379,17z/data=!3m1!4b1!4m14!1m5!8m4!1e1!2s108712311622211703163!3m1!1e1!3m7!1s0x3a394357d7003749:0x7284e137601f4a6f!8m2!3d17.7359304!4d83.3360128!9m1!1b1!16s%2Fg%2F11c6vjqdq7?hl=en&entry=ttu&g_ep=EgoyMDI1MDgyNC4wIKXMDSoASAFQAw%3D%3D";
@@ -58,11 +64,11 @@ const googleReviewURL = "https://www.google.com/maps/place/SRI+BHAVYA+HOSTEL+(+L
 // Submit feedback
 document.getElementById("feedbackForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  
   const formData = {
     name: e.target.name.value,
     email: e.target.email.value,
-    message: e.target.message.value
+    message: e.target.message.value,
+    timestamp: new Date().toISOString()
   };
 
   try {
@@ -76,9 +82,8 @@ document.getElementById("feedbackForm").addEventListener("submit", async (e) => 
       e.target.reset();
       document.getElementById("responseMsg").innerHTML =
         `<div class="alert alert-success">✅ Feedback submitted! Redirecting to Google review…</div>`;
-      setTimeout(() => {
-        window.open(googleReviewURL, "_blank");
-      }, 1000);
+      showToast(`You submitted a review: "${formData.message.slice(0,30)}..."`);
+      setTimeout(() => window.open(googleReviewURL, "_blank"), 1000);
     } else {
       document.getElementById("responseMsg").innerHTML =
         `<div class="alert alert-danger">❌ Something went wrong!</div>`;
@@ -92,28 +97,39 @@ document.getElementById("feedbackForm").addEventListener("submit", async (e) => 
 // Toggle Light/Dark mode
 document.getElementById("toggleMode").addEventListener("click", () => {
   document.body.classList.toggle("dark-mode");
+  document.body.classList.toggle("bg-light");
 });
 
 // Share page link
 document.getElementById("shareLink").addEventListener("click", () => {
   navigator.clipboard.writeText(window.location.href);
-  alert("Link copied to clipboard!");
+  showToast("Link copied to clipboard!");
 });
 
-// Toast notifications
+// Toast notifications with timestamps
 async function fetchRecentFeedback() {
   try {
     const res = await fetch(backendURL);
     if (!res.ok) return;
     const data = await res.json();
-    if (data.length === 0) return;
+    if (!data.length) return;
 
     const latest = data[data.length - 1];
-    showToast(`${latest.name || "Anonymous"} submitted a review: "${latest.message.slice(0, 30)}..."`);
+    const now = new Date();
+    const feedbackTime = new Date(latest.timestamp || now);
+    const diffSeconds = Math.floor((now - feedbackTime) / 1000);
+
+    let timeText;
+    if (diffSeconds < 60) timeText = "just now";
+    else if (diffSeconds < 3600) timeText = `${Math.floor(diffSeconds/60)} min ago`;
+    else if (diffSeconds < 86400) timeText = `${Math.floor(diffSeconds/3600)} hr ago`;
+    else timeText = `${Math.floor(diffSeconds/86400)} day(s) ago`;
+
+    showToast(`${latest.name || "Anonymous"} submitted a review: "${latest.message.slice(0,30)}..." (${timeText})`);
   } catch(err) { console.log(err); }
 }
 
-// Create toast
+// Create Bootstrap toast
 function showToast(message) {
   const toast = document.createElement("div");
   toast.className = "toast align-items-center text-bg-primary border-0 mb-2";
@@ -122,17 +138,19 @@ function showToast(message) {
     <div class="toast-body">${message}</div>
     <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
   </div>`;
-  document.getElementById("toastContainer").appendChild(toast);
 
-  // Auto remove after 5 seconds
-  setTimeout(() => toast.remove(), 5000);
+  const container = document.getElementById("toastContainer");
+  container.appendChild(toast);
+
+  const bsToast = new bootstrap.Toast(toast, { delay: 5000, autohide: true });
+  bsToast.show();
+
+  setTimeout(() => toast.remove(), 5500);
 }
 
-// Fetch every 2 minutes
+// Initial fetch + every 2 minutes
+fetchRecentFeedback();
 setInterval(fetchRecentFeedback, 120000);
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
